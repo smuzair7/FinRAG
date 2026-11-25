@@ -1,8 +1,4 @@
-"""FastEmbed-backed dense + sparse embeddings.
-
-`bge-m3` ships both modalities from a single model. We expose them as separate
-functions because Qdrant accepts them as different named vectors.
-"""
+"""FastEmbed-backed dense + sparse embeddings, stored as separate named vectors in Qdrant."""
 
 from __future__ import annotations
 
@@ -38,11 +34,11 @@ def _get_sparse():  # type: ignore[no-untyped-def]
     if _sparse_model is None:
         with _lock:
             if _sparse_model is None:
-                # SparseTextEmbedding is paired with bge-m3 in FastEmbed.
                 from fastembed import SparseTextEmbedding
 
-                log.info("loading sparse embedder BAAI/bge-m3 (sparse)")
-                _sparse_model = SparseTextEmbedding(model_name="prithivida/Splade_PP_en_v1")
+                model_name = get_infra().sparse_model
+                log.info("loading sparse embedder %s", model_name)
+                _sparse_model = SparseTextEmbedding(model_name=model_name)
     return _sparse_model
 
 

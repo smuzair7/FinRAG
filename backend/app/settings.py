@@ -49,6 +49,7 @@ class InfraSettings(BaseSettings):
     s3_use_ssl: bool = False
 
     embedding_model: str = Field(default="BAAI/bge-large-en-v1.5")
+    sparse_model: str = Field(default="prithivida/Splade_PP_en_v1")
     reranker_model: str = Field(default="BAAI/bge-reranker-v2-m3")
 
 
