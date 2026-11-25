@@ -46,7 +46,11 @@ async def run_chat(
         retrieval = RetrievalResult(citations=[], context_blocks=[], raw_payloads=[])
     else:
         try:
-            retrieval = await retrieve(session_id=request.session_id, query=request.message)
+            retrieval = await retrieve(
+                session_id=request.session_id,
+                query=request.message,
+                doc_ids=request.doc_ids,
+            )
         except Exception as e:  # noqa: BLE001
             log.warning("retrieval failed: %s", e)
             retrieval = RetrievalResult(citations=[], context_blocks=[], raw_payloads=[])

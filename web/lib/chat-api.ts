@@ -17,6 +17,7 @@ export interface ChatRequestBody {
   base_url?: string;
   temperature?: number;
   tools_enabled?: boolean;
+  doc_ids?: string[];
 }
 
 export type ChatEvent =

@@ -38,6 +38,7 @@ async def retrieve(
     query: str,
     top_k: int = 6,
     pool_size: int = 20,
+    doc_ids: list[str] | None = None,
 ) -> RetrievalResult:
     variants = expand_query(query) or [query]
 
@@ -54,6 +55,7 @@ async def retrieve(
                 dense_query=dense,
                 sparse_query=sparse,
                 limit=pool_size,
+                doc_ids=doc_ids,
             )
         except Exception as e:  # noqa: BLE001
             log.warning("qdrant hybrid_search failed: %s", e)
