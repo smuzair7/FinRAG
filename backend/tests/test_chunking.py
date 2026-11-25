@@ -4,7 +4,7 @@ import pytest
 from tokenizers import Tokenizer, models, pre_tokenizers
 
 from app.ingestion import chunking
-from app.ingestion.chunking import chunk_text, contextualize
+from app.ingestion.chunking import chunk_text, contextualize, split_markdown_table
 
 SECTION = " ".join(f"Revenue grew {i} percent in the quarter." for i in range(300))
 
@@ -44,3 +44,21 @@ def test_contextualize_prefixes_document_and_section() -> None:
 
 def test_contextualize_without_metadata_is_identity() -> None:
     assert contextualize("plain", doc_name="") == "plain"
+
+
+TABLE = "| Line item | FY2024 | FY2023 |\n| --- | --- | --- |\n" + "\n".join(
+    f"| Item {i} | {i * 10} | {i * 9} |" for i in range(40)
+)
+
+
+def test_large_table_splits_into_row_groups_with_header() -> None:
+    parts = split_markdown_table(TABLE, max_tokens=60)
+    assert len(parts) > 1
+    assert all(p.startswith("| Line item | FY2024 | FY2023 |\n| --- |") for p in parts)
+    assert all(len(p.split()) <= 60 for p in parts)
+    rows = [line for p in parts for line in p.splitlines()[2:]]
+    assert rows == TABLE.splitlines()[2:]
+
+
+def test_small_table_is_kept_whole() -> None:
+    assert split_markdown_table(TABLE, max_tokens=10_000) == [TABLE]

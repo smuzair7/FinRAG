@@ -15,6 +15,7 @@ and the Qdrant upserter reads `payload`.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import Literal
@@ -80,6 +81,41 @@ def contextualize(
     if section_path:
         header.append("Section: " + " > ".join(section_path))
     return "\n".join([*header, "", text]) if header else text
+
+
+_TABLE_RULE_RE = re.compile(r"^\s*\|?\s*:?-{3,}")
+_HEADER_LINES = 2  # header row + separator row
+
+
+def split_markdown_table(markdown: str, *, max_tokens: int = DEFAULT_MAX_TOKENS) -> list[str]:
+    """Split a markdown table into row groups of at most `max_tokens`, each repeating the header."""
+    tokenizer = embedding_tokenizer()
+
+    def count(text: str) -> int:
+        return len(tokenizer.encode(text, add_special_tokens=False).ids)
+
+    lines = markdown.strip().splitlines()
+    if count(markdown) <= max_tokens or len(lines) < _HEADER_LINES:
+        return [markdown]
+    has_header = len(lines) > _HEADER_LINES and bool(_TABLE_RULE_RE.match(lines[1]))
+    header, rows = (
+        (lines[:_HEADER_LINES], lines[_HEADER_LINES:]) if has_header else ([], lines)
+    )
+    budget = max_tokens - count("\n".join(header))
+
+    groups: list[list[str]] = []
+    current: list[str] = []
+    used = 0
+    for row in rows:
+        size = count(row)
+        if current and used + size > budget:
+            groups.append(current)
+            current, used = [], 0
+        current.append(row)
+        used += size
+    if current:
+        groups.append(current)
+    return ["\n".join(header + group) for group in groups]
 
 
 def make_table_chunk(

@@ -16,7 +16,13 @@ from pathlib import Path
 from typing import Any
 
 from app.calculations.facts_store import FactsStore, store_path
-from app.ingestion.chunking import Chunk, chunk_text, contextualize, make_table_chunk
+from app.ingestion.chunking import (
+    Chunk,
+    chunk_text,
+    contextualize,
+    make_table_chunk,
+    split_markdown_table,
+)
 from app.ingestion.hashing import chunk_hash, sha256_file
 from app.ingestion.parser_docling import ParsedDocument, parse_pdf
 from app.ingestion.tables import extract_facts
@@ -88,17 +94,17 @@ def _build_chunks(parsed: ParsedDocument) -> list[Chunk]:
         out.extend(chunk_text(section.text, page=section.page, section_path=section.section_path))
     for table in parsed.tables:
         markdown = table.markdown or _grid_to_markdown(table.cells)
-        out.append(
+        preview = [{f"col{i}": cell for i, cell in enumerate(row)} for row in table.cells[:5]]
+        out.extend(
             make_table_chunk(
-                markdown=markdown,
+                markdown=part,
                 page=table.page,
                 table_id=table.table_id,
                 section_path=table.section_path,
                 bbox=table.bbox,
-                json_preview=[
-                    {f"col{i}": cell for i, cell in enumerate(row)} for row in table.cells[:5]
-                ],
+                json_preview=preview,
             )
+            for part in split_markdown_table(markdown)
         )
     return out
 
