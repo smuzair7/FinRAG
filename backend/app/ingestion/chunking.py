@@ -16,6 +16,7 @@ and the Qdrant upserter reads `payload`.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Literal
 
 from semantic_text_splitter import TextSplitter
@@ -39,15 +40,10 @@ class Chunk:
     payload: dict[str, object] = field(default_factory=dict)
 
 
-_splitter: TextSplitter | None = None
-
-
+@lru_cache(maxsize=8)
 def _get_splitter(max_chars: int = DEFAULT_MAX_CHARS, overlap: int = DEFAULT_OVERLAP) -> TextSplitter:
-    """Singleton splitter — purely deterministic, no model load."""
-    global _splitter
-    if _splitter is None:
-        _splitter = TextSplitter(max_chars, overlap=overlap)
-    return _splitter
+    """One cached splitter per configuration — purely deterministic, no model load."""
+    return TextSplitter(max_chars, overlap=overlap)
 
 
 def chunk_text(

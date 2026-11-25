@@ -1,0 +1,12 @@
+from __future__ import annotations
+
+from app.ingestion.chunking import chunk_text
+
+SECTION = " ".join(f"Revenue grew {i} percent in the quarter." for i in range(300))
+
+
+def test_chunk_text_honours_max_chars_per_call() -> None:
+    chunk_text(SECTION, page=1)
+    small = chunk_text(SECTION, page=1, max_chars=500, overlap=50)
+    assert len(small) > 1
+    assert max(len(c.text) for c in small) <= 500
