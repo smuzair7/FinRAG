@@ -25,13 +25,13 @@ from qdrant_client.models import (
     VectorParams,
 )
 
+from app.retrieval.embedder import dense_dim
 from app.settings import get_infra
 
 log = logging.getLogger(__name__)
 
 DENSE_NAME = "dense"
 SPARSE_NAME = "sparse"
-DENSE_DIM = 1024  # bge-large-en-v1.5
 
 _client: AsyncQdrantClient | None = None
 
@@ -59,7 +59,7 @@ async def ensure_collection(session_id: str) -> None:
         return
     await client.create_collection(
         collection_name=name,
-        vectors_config={DENSE_NAME: VectorParams(size=DENSE_DIM, distance=Distance.COSINE)},
+        vectors_config={DENSE_NAME: VectorParams(size=dense_dim(), distance=Distance.COSINE)},
         sparse_vectors_config={SPARSE_NAME: SparseVectorParams(index=SparseIndexParams(on_disk=False))},
     )
     # Useful payload indexes for filtering.

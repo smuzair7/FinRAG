@@ -46,6 +46,17 @@ def _get_sparse():  # type: ignore[no-untyped-def]
     return _sparse_model
 
 
+def dense_dim() -> int:
+    """Vector size of the configured dense model."""
+    from fastembed import TextEmbedding
+
+    name = get_infra().embedding_model.lower()
+    for spec in TextEmbedding.list_supported_models():
+        if spec["model"].lower() == name:
+            return int(spec["dim"])
+    return len(embed_dense_query("dimension probe"))
+
+
 def embed_dense(texts: list[str]) -> list[list[float]]:
     model = _get_dense()
     return [list(v) for v in model.embed(texts, batch_size=32)]
