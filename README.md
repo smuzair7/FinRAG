@@ -1,6 +1,6 @@
 # FinRAG
 
-A bilingual (English / Arabic) retrieval-augmented generation system for financial documents. Answers cite the source page, numeric values are produced by deterministic tool calls rather than free generation, and responses stream over Server-Sent Events. Provider keys are user-supplied and live only in the browser tab.
+A retrieval-augmented generation system for financial documents. Answers cite the source page, numeric values are produced by deterministic tool calls rather than free generation, and responses stream over Server-Sent Events. Provider keys are user-supplied and live only in the browser tab.
 
 ## Table of contents
 
@@ -16,8 +16,10 @@ A bilingual (English / Arabic) retrieval-augmented generation system for financi
 
 ## Features
 
-- **Bilingual retrieval.** Arabic and English are indexed in the same vector space via `bge-m3`. Arabic text is normalized at ingest (NFKC, tatweel removal, alef / ya folding) and Arabic-Indic digits are translated for numeric parsing.
-- **Hybrid search.** Per-session Qdrant collections with both dense and sparse vectors, fused with reciprocal-rank fusion and reranked with `bge-reranker-v2-m3`.
+- **Hybrid search.** Per-session Qdrant collections with dense (`bge-large-en-v1.5`) and sparse (SPLADE) vectors, fused with reciprocal-rank fusion and reranked with `bge-reranker-v2-m3`.
+- **Contextual chunks.** Each chunk is embedded, sparse-encoded and reranked with a header naming its document and section path, so a passage such as "up 12% year over year" carries which report and statement it came from. Citations show the original text.
+- **Duplicate-aware top-k.** Passages whose words largely repeat a better-ranked hit are skipped, so repeated boilerplate across filings does not crowd out distinct evidence.
+- **Document scoping.** A chat request can pass `doc_ids` to restrict retrieval to selected documents.
 - **Layout-aware ingestion.** Docling extracts paragraphs and tables with page and bounding-box provenance. An OCR fallback covers scanned pages.
 - **Deterministic calculations.** Tables are parsed into typed facts (`statement`, `period`, `line_item`, `value`, `currency`, `unit_scale`) and stored in per-session DuckDB. The model invokes named tools — `lookup_line_item`, `compute_yoy`, `compute_ratio` (twelve named ratios), `cagr`, and a sandboxed `python_eval` — and returns the formula, inputs (each linked to its source fact), and the computed value.
 - **Streaming.** Tagged SSE events: `citations`, `token`, `tool_call`, `tool_result`, `usage`, `done`, `error`. Citations are emitted before the first token.
@@ -29,11 +31,11 @@ A bilingual (English / Arabic) retrieval-augmented generation system for financi
 ```
 upload → Docling parse → tables → DuckDB facts
                        ↓
-                    bge-m3 (dense + sparse)
+        contextual header → dense + SPLADE embeddings
                        ↓
                     Qdrant per-session collection
 
-query  → expand → hybrid search → rerank → citations
+query  → expand → hybrid search → rerank → dedupe → citations
                                               ↓
                        generation orchestrator (tool-call loop)
                                               ↓
@@ -46,7 +48,7 @@ A longer walk-through with rationale for each choice lives in [ARCHITECTURE.md](
 
 | Layer | Components |
 |---|---|
-| Backend | FastAPI, Pydantic v2, SQLAlchemy 2 (async), Docling, FastEmbed (`bge-m3`, `bge-reranker-v2-m3`), Qdrant, DuckDB, arq, MinIO |
+| Backend | FastAPI, Pydantic v2, SQLAlchemy 2 (async), Docling, FastEmbed (`bge-large-en-v1.5`, SPLADE, `bge-reranker-v2-m3`), Qdrant, DuckDB, arq, MinIO |
 | LLM SDKs | `openai`, `anthropic`, `google-genai`, `groq` |
 | Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, Zustand, `react-markdown` |
 | Infrastructure | Docker Compose, Redis |
@@ -64,7 +66,7 @@ docker compose up --build
 
 Open `http://localhost:3000`. From the landing page, follow the setup flow to pick a provider, choose a model, and paste an API key. The backend validates the key with a one-token completion before the chat UI is unlocked. Drag a PDF onto the document panel to ingest it; once parsing, embedding, and indexing complete, ask a question.
 
-The first run downloads model weights (`bge-m3` ~1.1 GB, reranker ~0.6 GB) into a Docker volume.
+The first run downloads model weights (`bge-large-en-v1.5` ~1.2 GB, SPLADE ~0.5 GB, reranker ~2.3 GB) into a Docker volume.
 
 ### Running without Docker
 
@@ -91,7 +93,8 @@ All configuration lives in `.env`. Provider API keys are never set here — they
 | `QDRANT_URL` | `http://qdrant:6333` | Qdrant endpoint. Set `QDRANT_MODE=memory` to use an in-process instance. |
 | `REDIS_URL` | `redis://redis:6379/0` | arq job queue. The API falls back to in-process ingestion if unreachable. |
 | `S3_ENDPOINT` | unset | MinIO / S3 endpoint. When unset, files are stored on the local disk under `./data/files/`. |
-| `EMBEDDING_MODEL` | `BAAI/bge-m3` | Override the default embedding model. |
+| `EMBEDDING_MODEL` | `BAAI/bge-large-en-v1.5` | Dense model; any FastEmbed text model works, and the collection is sized from it. |
+| `SPARSE_MODEL` | `prithivida/Splade_PP_en_v1` | Sparse encoder for the lexical half of hybrid search. |
 | `RERANKER_MODEL` | `BAAI/bge-reranker-v2-m3` | Override the default cross-encoder. |
 | `FINRAG_CORS_ORIGINS` | `http://localhost:3000` | Comma-separated allowlist. |
 
@@ -119,7 +122,7 @@ mypy app
 pytest -q
 ```
 
-Tests cover Arabic normalization, table extraction, content hashing, the per-session facts store, the AST-whitelisted Python sandbox, and a few smoke endpoints.
+Tests cover chunking, hybrid retrieval against an in-memory Qdrant, table extraction, content hashing, the per-session facts store, the AST-whitelisted Python sandbox, and a few smoke endpoints.
 
 ### Frontend
 
@@ -142,7 +145,7 @@ FinRAG/
 ├── backend/
 │   ├── app/
 │   │   ├── providers/        LLM adapters (openai_compat, anthropic, gemini)
-│   │   ├── ingestion/        Docling parse, table extraction, chunking, Arabic normalization
+│   │   ├── ingestion/        Docling parse, table extraction, chunking
 │   │   ├── retrieval/        Hybrid orchestrator, reranker, query rewriting
 │   │   ├── calculations/     Tool catalog, AST-whitelisted sandbox, audit
 │   │   ├── generation/       SSE encoder, retrieve → stream → tool-call loop

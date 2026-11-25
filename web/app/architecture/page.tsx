@@ -51,7 +51,7 @@ export default function ArchitecturePage() {
 │        │   │ Retrieval orchestrator                           │
 │        │   │  - query expansion                               │
 │        │   │  - Qdrant hybrid (dense+sparse, RRF)             │
-│        │   │  - bge-reranker-v2-m3                            │
+│        │   │  - bge-reranker-v2-m3, near-duplicate filter     │
 │        │   │  - assemble citations                            │
 │        │   └──────────────────────────────────────────────────┘
 │        │           │
