@@ -1,4 +1,4 @@
-# Ledgermind
+# FinRAG
 
 A bilingual (English / Arabic) retrieval-augmented generation system for financial documents. Answers cite the source page, numeric values are produced by deterministic tool calls rather than free generation, and responses stream over Server-Sent Events. Provider keys are user-supplied and live only in the browser tab.
 
@@ -56,8 +56,8 @@ A longer walk-through with rationale for each choice lives in [ARCHITECTURE.md](
 Requires Docker Desktop. Tested on Windows 11, macOS, and Linux.
 
 ```bash
-git clone https://github.com/smuzair7/LedgerMind.git
-cd LedgerMind
+git clone https://github.com/smuzair7/FinRAG.git
+cd FinRAG
 cp .env.example .env
 docker compose up --build
 ```
@@ -87,13 +87,13 @@ All configuration lives in `.env`. Provider API keys are never set here — they
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `LEDGERMIND_DATABASE_URL` | `sqlite+aiosqlite:///./data/ledgermind.db` | Session/message metadata. Swap for Postgres via `postgresql+asyncpg://…`. |
+| `FINRAG_DATABASE_URL` | `sqlite+aiosqlite:///./data/finrag.db` | Session/message metadata. Swap for Postgres via `postgresql+asyncpg://…`. |
 | `QDRANT_URL` | `http://qdrant:6333` | Qdrant endpoint. Set `QDRANT_MODE=memory` to use an in-process instance. |
 | `REDIS_URL` | `redis://redis:6379/0` | arq job queue. The API falls back to in-process ingestion if unreachable. |
 | `S3_ENDPOINT` | unset | MinIO / S3 endpoint. When unset, files are stored on the local disk under `./data/files/`. |
 | `EMBEDDING_MODEL` | `BAAI/bge-m3` | Override the default embedding model. |
 | `RERANKER_MODEL` | `BAAI/bge-reranker-v2-m3` | Override the default cross-encoder. |
-| `LEDGERMIND_CORS_ORIGINS` | `http://localhost:3000` | Comma-separated allowlist. |
+| `FINRAG_CORS_ORIGINS` | `http://localhost:3000` | Comma-separated allowlist. |
 
 ## Security model
 
@@ -138,7 +138,7 @@ If the repository is cloned into a OneDrive-synced folder, exclude `node_modules
 ## Project layout
 
 ```
-LedgerMind/
+FinRAG/
 ├── backend/
 │   ├── app/
 │   │   ├── providers/        LLM adapters (openai_compat, anthropic, gemini)

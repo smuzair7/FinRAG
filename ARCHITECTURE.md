@@ -1,4 +1,4 @@
-# Ledgermind — Architecture
+# FinRAG — Architecture
 
 > Mirror of the `/architecture` page in the web app. This file walks the system from upload to streamed answer, and explains the design choices behind each layer.
 
