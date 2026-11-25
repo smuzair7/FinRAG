@@ -3,9 +3,9 @@
 Strategy:
   1. Walk the parsed document by section headings. Each section becomes one or
      more chunks.
-  2. If a section exceeds a hard token budget, split with a sentence-aware
-     splitter (`semantic_text_splitter.TextSplitter`, Rust-binding, no model
-     load required for plain character/token-count splitting).
+  2. If a section exceeds the token budget, split it at sentence boundaries with
+     `semantic_text_splitter`, counting tokens with the embedding model's own
+     tokenizer (no model weights are loaded).
   3. Tables are NEVER merged with surrounding prose; each table is its own
      chunk type with the markdown body and a JSON preview retained in payload.
 
@@ -15,39 +15,38 @@ and the Qdrant upserter reads `payload`.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Literal
 
 from semantic_text_splitter import TextSplitter
 
+from app.retrieval.embedder import embedding_tokenizer
+
 ChunkKind = Literal["text", "table"]
 
-DEFAULT_MAX_CHARS = 6000  # approximate cap; tuned for ~1.5K-token bge-m3 budget
-DEFAULT_OVERLAP = 600
+# Leaves room for the context header within a 512-token encoder window.
+DEFAULT_MAX_TOKENS = 448
+DEFAULT_OVERLAP_TOKENS = 48
 
 
 @dataclass(slots=True)
 class Chunk:
-    text: str                    # normalized, indexable
-    raw_text: str                # original for display
+    text: str
     kind: ChunkKind
     page: int
     section_path: tuple[str, ...] = ()
     table_id: str | None = None
     bbox: tuple[float, float, float, float] | None = None
-    language: str | None = None
     payload: dict[str, object] = field(default_factory=dict)
 
 
-_splitter: TextSplitter | None = None
-
-
-def _get_splitter(max_chars: int = DEFAULT_MAX_CHARS, overlap: int = DEFAULT_OVERLAP) -> TextSplitter:
-    """Singleton splitter — purely deterministic, no model load."""
-    global _splitter
-    if _splitter is None:
-        _splitter = TextSplitter(max_chars, overlap=overlap)
-    return _splitter
+@lru_cache(maxsize=8)
+def _get_splitter(max_tokens: int, overlap: int) -> TextSplitter:
+    return TextSplitter.from_huggingface_tokenizer(
+        embedding_tokenizer(), max_tokens, overlap=overlap
+    )
 
 
 def chunk_text(
@@ -55,48 +54,85 @@ def chunk_text(
     *,
     page: int,
     section_path: tuple[str, ...] = (),
-    raw_text: str | None = None,
-    language: str | None = None,
-    max_chars: int = DEFAULT_MAX_CHARS,
-    overlap: int = DEFAULT_OVERLAP,
+    max_tokens: int = DEFAULT_MAX_TOKENS,
+    overlap: int = DEFAULT_OVERLAP_TOKENS,
 ) -> list[Chunk]:
-    """Split prose by sentence boundaries while staying under `max_chars`."""
+    """Split prose at sentence boundaries into chunks of at most `max_tokens` model tokens."""
     if not text.strip():
         return []
-    splitter = _get_splitter(max_chars=max_chars, overlap=overlap)
+    splitter = _get_splitter(max_tokens, overlap)
     pieces = splitter.chunks(text)
     return [
         Chunk(
             text=piece,
-            raw_text=piece if raw_text is None else raw_text,
             kind="text",
             page=page,
             section_path=section_path,
-            language=language,
         )
         for piece in pieces
     ]
 
 
+def contextualize(
+    text: str, *, doc_name: str, section_path: tuple[str, ...] | list[str] = ()
+) -> str:
+    """Prefix a chunk with its document and section so it embeds with its context."""
+    header = [f"Document: {doc_name}"] if doc_name else []
+    if section_path:
+        header.append("Section: " + " > ".join(section_path))
+    return "\n".join([*header, "", text]) if header else text
+
+
+_TABLE_RULE_RE = re.compile(r"^\s*\|?\s*:?-{3,}")
+_HEADER_LINES = 2  # header row + separator row
+
+
+def split_markdown_table(markdown: str, *, max_tokens: int = DEFAULT_MAX_TOKENS) -> list[str]:
+    """Split a markdown table into row groups of at most `max_tokens`, each repeating the header."""
+    tokenizer = embedding_tokenizer()
+
+    def count(text: str) -> int:
+        return len(tokenizer.encode(text, add_special_tokens=False).ids)
+
+    lines = markdown.strip().splitlines()
+    if count(markdown) <= max_tokens or len(lines) < _HEADER_LINES:
+        return [markdown]
+    has_header = len(lines) > _HEADER_LINES and bool(_TABLE_RULE_RE.match(lines[1]))
+    header, rows = (
+        (lines[:_HEADER_LINES], lines[_HEADER_LINES:]) if has_header else ([], lines)
+    )
+    budget = max_tokens - count("\n".join(header))
+
+    groups: list[list[str]] = []
+    current: list[str] = []
+    used = 0
+    for row in rows:
+        size = count(row)
+        if current and used + size > budget:
+            groups.append(current)
+            current, used = [], 0
+        current.append(row)
+        used += size
+    if current:
+        groups.append(current)
+    return ["\n".join(header + group) for group in groups]
+
+
 def make_table_chunk(
     *,
     markdown: str,
-    raw_text: str,
     page: int,
     table_id: str,
     section_path: tuple[str, ...] = (),
     bbox: tuple[float, float, float, float] | None = None,
-    language: str | None = None,
     json_preview: list[dict[str, object]] | None = None,
 ) -> Chunk:
     return Chunk(
         text=markdown,
-        raw_text=raw_text,
         kind="table",
         page=page,
         section_path=section_path,
         table_id=table_id,
         bbox=bbox,
-        language=language,
         payload={"table_preview": json_preview or []},
     )

@@ -1,15 +1,14 @@
-"""FastEmbed-backed dense + sparse embeddings.
-
-`bge-m3` ships both modalities from a single model. We expose them as separate
-functions because Qdrant accepts them as different named vectors.
-"""
+"""FastEmbed-backed dense + sparse embeddings, stored as separate named vectors in Qdrant."""
 
 from __future__ import annotations
 
 import logging
 import sqlite3
 import threading
+from functools import lru_cache
 from pathlib import Path
+
+from tokenizers import Tokenizer
 
 from app.settings import get_infra, get_settings
 
@@ -38,12 +37,32 @@ def _get_sparse():  # type: ignore[no-untyped-def]
     if _sparse_model is None:
         with _lock:
             if _sparse_model is None:
-                # SparseTextEmbedding is paired with bge-m3 in FastEmbed.
                 from fastembed import SparseTextEmbedding
 
-                log.info("loading sparse embedder BAAI/bge-m3 (sparse)")
-                _sparse_model = SparseTextEmbedding(model_name="prithivida/Splade_PP_en_v1")
+                model_name = get_infra().sparse_model
+                log.info("loading sparse embedder %s", model_name)
+                _sparse_model = SparseTextEmbedding(model_name=model_name)
     return _sparse_model
+
+
+@lru_cache(maxsize=1)
+def embedding_tokenizer() -> Tokenizer:
+    """Tokenizer of the configured dense model, used to size chunks in model tokens."""
+    tokenizer = Tokenizer.from_pretrained(get_infra().embedding_model)
+    tokenizer.no_truncation()
+    tokenizer.no_padding()
+    return tokenizer
+
+
+def dense_dim() -> int:
+    """Vector size of the configured dense model."""
+    from fastembed import TextEmbedding
+
+    name = get_infra().embedding_model.lower()
+    for spec in TextEmbedding.list_supported_models():
+        if spec["model"].lower() == name:
+            return int(spec["dim"])
+    return len(embed_dense_query("dimension probe"))
 
 
 def embed_dense(texts: list[str]) -> list[list[float]]:

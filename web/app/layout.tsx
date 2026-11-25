@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, IBM_Plex_Sans_Arabic } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -15,18 +15,11 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-const ibmArabic = IBM_Plex_Sans_Arabic({
-  subsets: ["arabic"],
-  variable: "--font-arabic",
-  weight: ["300", "400", "500", "600", "700"],
-  display: "swap",
-});
-
 export const metadata: Metadata = {
-  title: "Ledgermind — Read financial statements with a model that shows its work",
+  title: "FinRAG — Read financial statements with a model that shows its work",
   description:
-    "Bilingual (English/Arabic) RAG for financial documents. Cited every claim. Computed, not guessed. Streamed. Multi-provider, BYO-key.",
-  metadataBase: new URL("https://github.com/smuzair7/LedgerMind"),
+    "RAG for financial documents. Cited every claim. Computed, not guessed. Streamed. Multi-provider, BYO-key.",
+  metadataBase: new URL("https://github.com/smuzair7/FinRAG"),
 };
 
 export default function RootLayout({
@@ -37,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${ibmArabic.variable} font-sans`}
+        className={`${geistSans.variable} ${geistMono.variable} font-sans`}
       >
         <ThemeProvider>{children}</ThemeProvider>
       </body>

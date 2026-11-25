@@ -10,6 +10,7 @@ import logging
 import threading
 from dataclasses import dataclass
 
+from app.ingestion.chunking import contextualize
 from app.settings import get_infra
 
 log = logging.getLogger(__name__)
@@ -54,7 +55,14 @@ def rerank(
         return []
     try:
         model = _get_reranker()
-        texts = [c.payload.get("text") or c.payload.get("raw_text") or "" for c in candidates]
+        texts = [
+            contextualize(
+                c.payload.get("text") or "",
+                doc_name=str(c.payload.get("doc_name") or ""),
+                section_path=tuple(c.payload.get("section_path") or ()),
+            )
+            for c in candidates
+        ]
         scores = list(model.rerank(query, texts))
         out = [
             RerankResult(payload=c.payload, score_before=c.score_before, score=float(s))

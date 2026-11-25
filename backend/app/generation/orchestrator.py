@@ -19,7 +19,7 @@ from dataclasses import asdict
 
 from app.calculations.audit import ToolAudit
 from app.calculations.tools import ToolError, all_tools, run_tool
-from app.generation.prompts import SYSTEM_PROMPT, language_hint
+from app.generation.prompts import SYSTEM_PROMPT
 from app.providers.base import (
     DoneEvent,
     ErrorEvent,
@@ -46,7 +46,11 @@ async def run_chat(
         retrieval = RetrievalResult(citations=[], context_blocks=[], raw_payloads=[])
     else:
         try:
-            retrieval = await retrieve(session_id=request.session_id, query=request.message)
+            retrieval = await retrieve(
+                session_id=request.session_id,
+                query=request.message,
+                doc_ids=request.doc_ids,
+            )
         except Exception as e:  # noqa: BLE001
             log.warning("retrieval failed: %s", e)
             retrieval = RetrievalResult(citations=[], context_blocks=[], raw_payloads=[])
@@ -141,7 +145,7 @@ def _build_messages(
     citations: list[Citation],
     context_blocks: list[str],
 ) -> list[ChatMessage]:
-    system = SYSTEM_PROMPT.strip() + "\n\n" + language_hint(request.language)
+    system = SYSTEM_PROMPT.strip()
     if citations:
         system += (
             "\n\nYou are answering against indexed source documents. The user's "

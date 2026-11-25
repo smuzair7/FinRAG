@@ -6,7 +6,7 @@
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
-const KEY_STORAGE = "ledgermind:provider-key";
+const KEY_STORAGE = "finrag:provider-key";
 
 export function setProviderKey(key: string): void {
   if (typeof window === "undefined") return;

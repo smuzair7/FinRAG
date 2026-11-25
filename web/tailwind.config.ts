@@ -32,7 +32,6 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
         mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
-        arabic: ["var(--font-arabic)", "system-ui", "sans-serif"],
       },
       fontVariantNumeric: {
         tabular: "tabular-nums",

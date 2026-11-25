@@ -39,7 +39,7 @@ export const useAuth = create<AuthStore>()(
       },
     }),
     {
-      name: "ledgermind:auth",
+      name: "finrag:auth",
       storage: createJSONStorage(() =>
         typeof window === "undefined" ? (undefined as never) : window.sessionStorage,
       ),

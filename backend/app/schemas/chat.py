@@ -45,7 +45,7 @@ class ChatRequest(BaseModel):
     base_url: str | None = None  # for `custom` provider
     temperature: float = Field(default=0.2, ge=0.0, le=2.0)
     tools_enabled: bool = True
-    language: Literal["en", "ar", "both"] = "en"
+    doc_ids: list[str] | None = None  # restrict retrieval to these documents
 
 
 # --- SSE event payloads (tagged via `event` field on the SSE frame) ---

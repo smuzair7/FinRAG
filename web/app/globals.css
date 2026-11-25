@@ -37,9 +37,6 @@
     @apply bg-bg text-ink antialiased;
     font-feature-settings: "ss01" on, "cv11" on;
   }
-  :lang(ar) {
-    font-family: var(--font-arabic), system-ui, sans-serif;
-  }
   ::selection {
     background: rgb(var(--accent) / 0.35);
   }

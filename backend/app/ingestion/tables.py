@@ -1,14 +1,13 @@
 """Turn ParsedTable instances into typed Fact rows.
 
-The classifier is heuristic — header keywords in EN + AR plus a small synonym
+The classifier is heuristic — header keywords plus a small synonym
 map for common line items. We intentionally bias toward emitting MORE facts
 with raw line-item names; tool calls use both canonical and raw matches.
 
 Numeric parsing handles:
-  - Thousands separators in AR ("1,234,567" / "١٬٢٣٤٬٥٦٧")
+  - Thousands separators ("1,234,567")
   - Parentheses-as-negative ("(123)" → -123)
   - Trailing scale markers in headers ("in thousands of USD" → unit_scale 1000)
-  - AR-Indic digits → Latin digits before parsing
 """
 
 from __future__ import annotations
@@ -17,7 +16,6 @@ import hashlib
 import re
 
 from app.calculations.types import Fact
-from app.ingestion.arabic import looks_arabic, normalize_arabic
 from app.ingestion.parser_docling import ParsedTable
 
 # --- Statement detection ---------------------------------------------------
@@ -28,46 +26,39 @@ _STATEMENT_HINTS: dict[str, tuple[str, ...]] = {
         "statement of operations",
         "statement of comprehensive income",
         "profit or loss",
-        "قائمة الدخل",
-        "قائمة الأرباح",
-        "بيان الدخل",
     ),
     "balance": (
         "balance sheet",
         "statement of financial position",
-        "قائمة المركز المالي",
-        "الميزانية",
     ),
     "cashflow": (
         "cash flow",
         "statement of cash flows",
-        "قائمة التدفقات النقدية",
     ),
     "equity": (
         "statement of equity",
         "changes in equity",
-        "قائمة حقوق الملكية",
     ),
 }
 
 # --- Line item canonical map ----------------------------------------------
 
 _LINE_ITEM_CANONICAL: dict[str, tuple[str, ...]] = {
-    "Revenue": ("revenue", "net revenue", "sales", "net sales", "total revenue", "الإيرادات", "صافي الإيرادات", "المبيعات"),
-    "Cost of revenue": ("cost of revenue", "cost of sales", "cost of goods sold", "cogs", "تكلفة الإيرادات", "تكلفة المبيعات"),
-    "Gross profit": ("gross profit", "إجمالي الربح", "الربح الإجمالي"),
-    "Operating expenses": ("operating expenses", "total operating expenses", "المصروفات التشغيلية"),
-    "Operating income": ("operating income", "income from operations", "operating profit", "الدخل التشغيلي", "الربح التشغيلي"),
-    "Net income": ("net income", "net profit", "net earnings", "صافي الدخل", "صافي الربح"),
-    "Total assets": ("total assets", "إجمالي الأصول"),
-    "Total liabilities": ("total liabilities", "إجمالي الالتزامات", "إجمالي المطلوبات"),
-    "Total equity": ("total equity", "total stockholders equity", "حقوق المساهمين", "حقوق الملكية"),
-    "Current assets": ("current assets", "total current assets", "الأصول المتداولة"),
-    "Current liabilities": ("current liabilities", "total current liabilities", "الالتزامات المتداولة"),
-    "Cash and equivalents": ("cash and cash equivalents", "cash", "النقد", "النقد وما في حكمه"),
-    "Inventory": ("inventory", "inventories", "المخزون"),
-    "Cash from operations": ("net cash from operating activities", "cash from operations", "النقد من الأنشطة التشغيلية"),
-    "Interest expense": ("interest expense", "مصروف الفوائد", "تكاليف التمويل"),
+    "Revenue": ("revenue", "net revenue", "sales", "net sales", "total revenue"),
+    "Cost of revenue": ("cost of revenue", "cost of sales", "cost of goods sold", "cogs"),
+    "Gross profit": ("gross profit",),
+    "Operating expenses": ("operating expenses", "total operating expenses"),
+    "Operating income": ("operating income", "income from operations", "operating profit"),
+    "Net income": ("net income", "net profit", "net earnings"),
+    "Total assets": ("total assets",),
+    "Total liabilities": ("total liabilities",),
+    "Total equity": ("total equity", "total stockholders equity"),
+    "Current assets": ("current assets", "total current assets"),
+    "Current liabilities": ("current liabilities", "total current liabilities"),
+    "Cash and equivalents": ("cash and cash equivalents", "cash"),
+    "Inventory": ("inventory", "inventories"),
+    "Cash from operations": ("net cash from operating activities", "cash from operations"),
+    "Interest expense": ("interest expense",),
 }
 
 
@@ -92,7 +83,7 @@ _HALF_RE = re.compile(r"\bh([12])\s*(20\d{2})\b", re.IGNORECASE)
 
 def _detect_period(label: str) -> tuple[str, str] | None:
     """Return (period_label, period_kind) or None."""
-    lo = label.translate(_AR_DIGIT_TRANS).strip().lower()
+    lo = label.strip().lower()
     m = _QUARTER_RE.search(lo)
     if m:
         return (f"Q{m.group(1)} {m.group(2)}", "quarter")
@@ -110,18 +101,13 @@ def _detect_period(label: str) -> tuple[str, str] | None:
 
 # --- Number parsing --------------------------------------------------------
 
-_AR_INDIC_DIGITS = "٠١٢٣٤٥٦٧٨٩"
-_LATIN_DIGITS = "0123456789"
-_AR_DIGIT_TRANS = str.maketrans(_AR_INDIC_DIGITS, _LATIN_DIGITS)
-_AR_THOUSANDS = "٬"  # Arabic thousands separator
-
-_NUMBER_RE = re.compile(r"^[\s]*\(?\s*([\d,٬.\-]+)\s*\)?[\s%]*$")
+_NUMBER_RE = re.compile(r"^[\s]*\(?\s*([\d,.\-]+)\s*\)?[\s%]*$")
 
 
 def _parse_number(cell: str) -> float | None:
     if cell is None:
         return None
-    s = cell.translate(_AR_DIGIT_TRANS).replace(_AR_THOUSANDS, ",").strip()
+    s = cell.strip()
     if not s:
         return None
     negative = "(" in s and ")" in s
@@ -137,7 +123,7 @@ def _parse_number(cell: str) -> float | None:
 
 
 _UNIT_RE = re.compile(
-    r"(thousands?|millions?|billions?|usd|eur|sar|aed|egp|بآلاف|بملايين|بمليارات|دولار|درهم|ريال)",
+    r"(thousands?|millions?|billions?|usd|eur|sar|aed|egp)",
     re.IGNORECASE,
 )
 _UNIT_SCALE = {
@@ -147,19 +133,13 @@ _UNIT_SCALE = {
     "millions": 1_000_000.0,
     "billion": 1_000_000_000.0,
     "billions": 1_000_000_000.0,
-    "بآلاف": 1_000.0,
-    "بملايين": 1_000_000.0,
-    "بمليارات": 1_000_000_000.0,
 }
 _CURRENCY_HINTS = {
     "usd": "USD",
     "dollar": "USD",
-    "دولار": "USD",
     "eur": "EUR",
     "sar": "SAR",
-    "ريال": "SAR",
     "aed": "AED",
-    "درهم": "AED",
     "egp": "EGP",
 }
 
@@ -228,7 +208,6 @@ def extract_facts(
                 continue
             period, period_kind = period_info
             fact_id = _fact_id(session_id, doc_id, table.table_id, r_idx, c_idx)
-            label_for_lang = line_label if not looks_arabic(line_label) else normalize_arabic(line_label)
             facts.append(
                 Fact(
                     id=fact_id,
@@ -239,7 +218,7 @@ def extract_facts(
                     statement=statement,
                     period=period,
                     period_kind=period_kind,
-                    line_item_raw=label_for_lang,
+                    line_item_raw=line_label,
                     line_item=canonical,
                     value=value * unit_scale,
                     currency=currency_default,

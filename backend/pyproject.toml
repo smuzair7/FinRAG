@@ -1,7 +1,7 @@
 [project]
-name = "ledgermind-backend"
+name = "finrag-backend"
 version = "0.1.0"
-description = "Ledgermind FastAPI backend — bilingual financial-RAG with deterministic calculations."
+description = "FinRAG FastAPI backend — financial RAG with cited answers and deterministic calculations."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -30,6 +30,7 @@ dependencies = [
   "rapidocr-onnxruntime>=1.4.0",
   "pypdf>=5.1.0",
   "semantic-text-splitter>=0.18.0",
+  "tokenizers>=0.20.0",
 
   # Job queue + object storage
   "arq>=0.26.3",

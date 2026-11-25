@@ -1,6 +1,6 @@
 # Backend
 
-FastAPI app for Ledgermind. See [`../ARCHITECTURE.md`](../ARCHITECTURE.md) for the system context.
+FastAPI app for FinRAG. See [`../ARCHITECTURE.md`](../ARCHITECTURE.md) for the system context.
 
 ```bash
 uv sync

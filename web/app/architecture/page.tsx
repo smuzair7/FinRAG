@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
 export const metadata = {
-  title: "Ledgermind — Architecture",
+  title: "FinRAG — Architecture",
 };
 
 export default function ArchitecturePage() {
@@ -39,8 +39,8 @@ export default function ArchitecturePage() {
 │        │                              │  arq worker (Redis)   │
 │        │                              │  Docling parse        │
 │        │                              │  table extraction     │
-│        │                              │  bilingual chunking   │
-│        │                              │  bge-m3 embeddings    │
+│        │                              │  section chunking     │
+│        │                              │  dense + SPLADE embed │
 │        │                              │  Qdrant + DuckDB      │
 │        │                              └───────────────────────┘
 │        │
@@ -51,7 +51,7 @@ export default function ArchitecturePage() {
 │        │   │ Retrieval orchestrator                           │
 │        │   │  - query expansion                               │
 │        │   │  - Qdrant hybrid (dense+sparse, RRF)             │
-│        │   │  - bge-reranker-v2-m3                            │
+│        │   │  - bge-reranker-v2-m3, near-duplicate filter     │
 │        │   │  - assemble citations                            │
 │        │   └──────────────────────────────────────────────────┘
 │        │           │

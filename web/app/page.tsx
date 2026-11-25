@@ -3,7 +3,7 @@ import {
   ArrowRight,
   Quote,
   Calculator,
-  Languages,
+  Layers,
   ShieldCheck,
   Zap,
   GitBranch,
@@ -26,9 +26,9 @@ const features = [
     body: "Numbers are produced by deterministic tool calls (compute_ratio, compute_yoy, …) over a structured fact store — then audited inline.",
   },
   {
-    icon: Languages,
-    title: "Bilingual by design",
-    body: "Arabic and English are indexed natively via bge-m3 — no translation hop. RTL UI flips on language switch.",
+    icon: Layers,
+    title: "Hybrid retrieval",
+    body: "Dense and sparse vectors per chunk, fused with reciprocal-rank fusion in Qdrant, then reranked by a cross-encoder.",
   },
   {
     icon: ShieldCheck,
@@ -52,7 +52,8 @@ const stack = [
   "React 19",
   "FastAPI",
   "Qdrant",
-  "bge-m3",
+  "bge-large-en",
+  "SPLADE",
   "Docling",
   "DuckDB",
   "arq",
@@ -78,7 +79,7 @@ export default function HomePage() {
               <span className="text-accent">shows its work</span>.
             </h1>
             <p className="max-w-xl text-pretty text-lg text-muted">
-              Upload any annual report — in English or Arabic. Ask anything. Get an
+              Upload any annual report. Ask anything. Get an
               answer where every claim is cited to a page and every number is{" "}
               <em>computed</em> by a sandboxed tool call, not hallucinated by the
               model.
@@ -108,7 +109,7 @@ export default function HomePage() {
               <span className="h-2.5 w-2.5 rounded-full bg-negative/70" />
               <span className="h-2.5 w-2.5 rounded-full bg-accent/70" />
               <span className="h-2.5 w-2.5 rounded-full bg-positive/70" />
-              <span className="ml-2 text-xs text-muted">ledgermind · chat</span>
+              <span className="ml-2 text-xs text-muted">finrag · chat</span>
             </div>
             <div className="space-y-3 text-sm">
               <div className="flex gap-2">
@@ -153,7 +154,7 @@ export default function HomePage() {
             </h2>
             <p className="mt-3 text-muted">
               Most chat-with-PDF demos stop at <code>PyPDF2.extract_text</code> + top-K
-              cosine. Ledgermind treats the boring parts — parsing, retrieval, math,
+              cosine. FinRAG treats the boring parts — parsing, retrieval, math,
               streaming — as the actual product.
             </p>
           </div>
@@ -182,8 +183,8 @@ export default function HomePage() {
               Hybrid retrieval. Sandboxed math.
             </h2>
             <p className="mt-4 text-muted">
-              Docling parses tables with cell grids and bboxes. <code>bge-m3</code>{" "}
-              indexes Arabic and English in one model. Qdrant runs hybrid dense +
+              Docling parses tables with cell grids and bboxes. A dense embedder and a
+              SPLADE sparse encoder index every chunk. Qdrant runs hybrid dense +
               sparse with RRF fusion. A reranker then trims to 6. Calculations are
               named tool calls executed in an AST-whitelisted sandbox — every number
               cites its source and its formula.
@@ -199,11 +200,11 @@ export default function HomePage() {
             <pre className="overflow-x-auto p-5 text-xs leading-relaxed text-muted">
               {`upload  →  Docling parse  →  table → DuckDB facts
                           ↓
-                       bge-m3 (dense + sparse)
+                       dense + SPLADE (with context header)
                           ↓
                        Qdrant per-session
                           ↓
-   query  →  expand  →  hybrid search  →  rerank
+   query  →  expand  →  hybrid search  →  rerank  →  dedupe
                           ↓
                        SSE: citations → tokens
                           ↓

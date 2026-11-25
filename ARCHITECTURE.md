@@ -1,4 +1,4 @@
-# Ledgermind — Architecture
+# FinRAG — Architecture
 
 > Mirror of the `/architecture` page in the web app. This file walks the system from upload to streamed answer, and explains the design choices behind each layer.
 
@@ -13,8 +13,8 @@
 │        │                              │  arq worker (Redis)   │
 │        │                              │  Docling parse        │
 │        │                              │  table extraction     │
-│        │                              │  bilingual chunking   │
-│        │                              │  bge-m3 embeddings    │
+│        │                              │  section chunking     │
+│        │                              │  dense + SPLADE embed │
 │        │                              │  Qdrant + DuckDB      │
 │        │                              └───────────────────────┘
 │        │
@@ -25,7 +25,7 @@
 │        │   │ Retrieval orchestrator                           │
 │        │   │  - query expansion                               │
 │        │   │  - Qdrant hybrid (dense+sparse, RRF)             │
-│        │   │  - bge-reranker-v2-m3                            │
+│        │   │  - bge-reranker-v2-m3, near-duplicate filter     │
 │        │   │  - assemble citations                            │
 │        │   └──────────────────────────────────────────────────┘
 │        │           │
@@ -55,11 +55,11 @@
 ### Parsing — Docling
 Layout-aware table extraction with row/col cell grids and per-cell bbox. Open-source, no API dependency. Used vs. PyMuPDF+pdfplumber (heavy glue for nested tables), Unstructured hi-res (slower with worse table fidelity), LlamaParse (hosted only).
 
-### Embeddings — `bge-m3` via FastEmbed
-Multilingual (100+ languages including Arabic), 1024-dim dense + native sparse vectors from one model, ONNX runtime, runs on CPU. The dual dense+sparse output makes hybrid retrieval a single inference call.
+### Embeddings — `bge-large-en-v1.5` + SPLADE via FastEmbed
+A 1024-dim dense model for semantic matches and a SPLADE sparse encoder for exact terms such as line-item names, tickers and fiscal periods. Both run on CPU through ONNX. Every chunk is encoded with a short header naming its document and section, so passages that only say "we" or "the Company" still carry which filing and statement they belong to.
 
 ### Retrieval — hybrid + rerank
-Qdrant native RRF fusion over dense and sparse prefetches, then `bge-reranker-v2-m3` reranks top-20 → top-6. Skipped HyDE: for financial QA it tends to hallucinate plausible-looking numbers that pollute retrieval.
+Qdrant native RRF fusion over dense and sparse prefetches, then `bge-reranker-v2-m3` reranks the top-20 pool and top-6 is filled greedily, skipping passages whose words are at least 80% contained in a better-ranked one. Skipped HyDE: for financial QA it tends to hallucinate plausible-looking numbers that pollute retrieval.
 
 ### Calculations — structured facts + sandboxed Python
 Post-ingest pass writes typed facts (`{statement, period, line_item, value, currency, bbox}`) to DuckDB. LLM emits `compute_ratio`, `compute_yoy`, etc.; an AST-whitelisted Python evaluator runs the formula. Every numeric answer cites both source pages and the formula.

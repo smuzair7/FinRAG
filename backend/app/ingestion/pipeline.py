@@ -1,6 +1,6 @@
 """End-to-end ingestion orchestrator.
 
-  parse → normalize → chunk → tables → embed → upsert
+  parse → chunk → tables → embed → upsert
                           ↘ facts → DuckDB
 
 Designed to run inside the arq worker. Idempotent: re-ingesting the same PDF
@@ -16,8 +16,13 @@ from pathlib import Path
 from typing import Any
 
 from app.calculations.facts_store import FactsStore, store_path
-from app.ingestion.arabic import looks_arabic, normalize_arabic
-from app.ingestion.chunking import Chunk, chunk_text, make_table_chunk
+from app.ingestion.chunking import (
+    Chunk,
+    chunk_text,
+    contextualize,
+    make_table_chunk,
+    split_markdown_table,
+)
 from app.ingestion.hashing import chunk_hash, sha256_file
 from app.ingestion.parser_docling import ParsedDocument, parse_pdf
 from app.ingestion.tables import extract_facts
@@ -86,33 +91,20 @@ def _step(cb: callable | None, pct: int, label: str) -> None:  # type: ignore[va
 def _build_chunks(parsed: ParsedDocument) -> list[Chunk]:
     out: list[Chunk] = []
     for section in parsed.sections:
-        is_ar = looks_arabic(section.text)
-        normalized = normalize_arabic(section.text) if is_ar else section.text
-        out.extend(
-            chunk_text(
-                normalized,
-                page=section.page,
-                section_path=section.section_path,
-                raw_text=section.text,
-                language="ar" if is_ar else "en",
-            )
-        )
+        out.extend(chunk_text(section.text, page=section.page, section_path=section.section_path))
     for table in parsed.tables:
         markdown = table.markdown or _grid_to_markdown(table.cells)
-        is_ar = looks_arabic(markdown)
-        out.append(
+        preview = [{f"col{i}": cell for i, cell in enumerate(row)} for row in table.cells[:5]]
+        out.extend(
             make_table_chunk(
-                markdown=normalize_arabic(markdown) if is_ar else markdown,
-                raw_text=markdown,
+                markdown=part,
                 page=table.page,
                 table_id=table.table_id,
                 section_path=table.section_path,
                 bbox=table.bbox,
-                language="ar" if is_ar else "en",
-                json_preview=[
-                    {f"col{i}": cell for i, cell in enumerate(row)} for row in table.cells[:5]
-                ],
+                json_preview=preview,
             )
+            for part in split_markdown_table(markdown)
         )
     return out
 
@@ -152,7 +144,7 @@ async def _embed_and_upsert(
 ) -> int:
     if not chunks:
         return 0
-    texts = [c.text for c in chunks]
+    texts = [contextualize(c.text, doc_name=doc_name, section_path=c.section_path) for c in chunks]
     dense = embed_dense(texts)
     _step(progress_cb, 80, "sparse encoding")
     sparse = embed_sparse(texts)
@@ -168,8 +160,6 @@ async def _embed_and_upsert(
             "page": c.page,
             "section_path": list(c.section_path),
             "chunk_type": c.kind,
-            "language": c.language,
-            "raw_text": c.raw_text,
             "text": c.text,
         }
         if c.bbox is not None:

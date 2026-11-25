@@ -13,12 +13,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from dataclasses import dataclass
 from typing import Any
 
 from app.retrieval import qdrant_client
 from app.retrieval.embedder import embed_dense_query, embed_sparse_query
-from app.retrieval.reranker import RerankCandidate, rerank
+from app.retrieval.reranker import RerankCandidate, RerankResult, rerank
 from app.retrieval.rewrite import expand_query
 from app.schemas.chat import Citation
 
@@ -38,6 +39,7 @@ async def retrieve(
     query: str,
     top_k: int = 6,
     pool_size: int = 20,
+    doc_ids: list[str] | None = None,
 ) -> RetrievalResult:
     variants = expand_query(query) or [query]
 
@@ -54,6 +56,7 @@ async def retrieve(
                 dense_query=dense,
                 sparse_query=sparse,
                 limit=pool_size,
+                doc_ids=doc_ids,
             )
         except Exception as e:  # noqa: BLE001
             log.warning("qdrant hybrid_search failed: %s", e)
@@ -81,7 +84,7 @@ async def retrieve(
         for pid, score in sorted(rrf_scores.items(), key=lambda kv: kv[1], reverse=True)[:pool_size]
     ]
 
-    reranked = rerank(query, candidates, top_k=top_k)
+    reranked = _drop_near_duplicates(rerank(query, candidates, top_k=len(candidates)), top_k)
 
     citations: list[Citation] = []
     context_blocks: list[str] = []
@@ -89,7 +92,7 @@ async def retrieve(
 
     for i, r in enumerate(reranked, start=1):
         payload = r.payload
-        text = payload.get("raw_text") or payload.get("text") or ""
+        text = payload.get("text") or ""
         page = int(payload.get("page") or 0) or 1
         doc_id = str(payload.get("doc_id") or "")
         doc_name = str(payload.get("doc_name") or "")
@@ -108,6 +111,30 @@ async def retrieve(
         raw_payloads.append(payload)
 
     return RetrievalResult(citations=citations, context_blocks=context_blocks, raw_payloads=raw_payloads)
+
+
+_WORD_RE = re.compile(r"\w+")
+
+
+def _drop_near_duplicates(
+    results: list[RerankResult], top_k: int, *, max_containment: float = 0.8
+) -> list[RerankResult]:
+    """Keep the best-ranked copy of passages whose words largely repeat a better hit."""
+    kept: list[RerankResult] = []
+    kept_words: list[set[str]] = []
+    for r in results:
+        words = set(_WORD_RE.findall(str(r.payload.get("text") or "").lower()))
+        if words and any(
+            len(words & other) / min(len(words), len(other)) >= max_containment
+            for other in kept_words
+            if other
+        ):
+            continue
+        kept.append(r)
+        kept_words.append(words)
+        if len(kept) == top_k:
+            break
+    return kept
 
 
 def _short(text: str, n: int) -> str:

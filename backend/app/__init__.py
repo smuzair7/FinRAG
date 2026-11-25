@@ -1,3 +1,3 @@
-"""Ledgermind backend package."""
+"""FinRAG backend package."""
 
 __version__ = "0.1.0"

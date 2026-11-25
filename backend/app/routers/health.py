@@ -13,7 +13,7 @@ async def healthz() -> dict[str, str]:
 @router.get("/")
 async def root() -> dict[str, str]:
     return {
-        "name": "ledgermind",
+        "name": "finrag",
         "docs": "/docs",
         "healthz": "/healthz",
     }
