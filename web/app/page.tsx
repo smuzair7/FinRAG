@@ -52,7 +52,8 @@ const stack = [
   "React 19",
   "FastAPI",
   "Qdrant",
-  "bge-m3",
+  "bge-large-en",
+  "SPLADE",
   "Docling",
   "DuckDB",
   "arq",
@@ -199,11 +200,11 @@ export default function HomePage() {
             <pre className="overflow-x-auto p-5 text-xs leading-relaxed text-muted">
               {`upload  →  Docling parse  →  table → DuckDB facts
                           ↓
-                       bge-m3 (dense + sparse)
+                       dense + SPLADE (with context header)
                           ↓
                        Qdrant per-session
                           ↓
-   query  →  expand  →  hybrid search  →  rerank
+   query  →  expand  →  hybrid search  →  rerank  →  dedupe
                           ↓
                        SSE: citations → tokens
                           ↓
