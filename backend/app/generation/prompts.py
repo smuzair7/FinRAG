@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-SYSTEM_PROMPT = """You are Ledgermind, an analyst assistant that reads financial statements.
+SYSTEM_PROMPT = """You are FinRAG, an analyst assistant that reads financial statements.
 
 Rules:
 - Cite the source for every claim you make about a document — use the citation IDs

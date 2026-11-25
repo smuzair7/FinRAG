@@ -1,7 +1,7 @@
 [project]
-name = "ledgermind-backend"
+name = "finrag-backend"
 version = "0.1.0"
-description = "Ledgermind FastAPI backend — bilingual financial-RAG with deterministic calculations."
+description = "FinRAG FastAPI backend — financial RAG with cited answers and deterministic calculations."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }

@@ -10,7 +10,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
-        env_prefix="LEDGERMIND_",
+        env_prefix="FINRAG_",
         case_sensitive=False,
         extra="ignore",
     )
@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     log_level: str = "info"
     cors_origins: str = "http://localhost:3000"
 
-    database_url: str = "sqlite+aiosqlite:///./data/ledgermind.db"
+    database_url: str = "sqlite+aiosqlite:///./data/finrag.db"
 
     data_dir: Path = Path("./data")
 
@@ -31,7 +31,7 @@ class Settings(BaseSettings):
 
 
 class InfraSettings(BaseSettings):
-    """Infrastructure settings — separate from LEDGERMIND_* prefix."""
+    """Infrastructure settings — separate from FINRAG_* prefix."""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -44,7 +44,7 @@ class InfraSettings(BaseSettings):
     s3_endpoint: str | None = None
     s3_access_key: str | None = None
     s3_secret_key: str | None = None
-    s3_bucket: str = "ledgermind"
+    s3_bucket: str = "finrag"
     s3_region: str = "us-east-1"
     s3_use_ssl: bool = False
 

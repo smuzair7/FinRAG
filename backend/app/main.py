@@ -28,9 +28,9 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
-        title="Ledgermind",
+        title="FinRAG",
         version="0.1.0",
-        description="Bilingual financial-RAG backend with deterministic calculations.",
+        description="Financial RAG backend with cited answers and deterministic calculations.",
         lifespan=lifespan,
     )
 

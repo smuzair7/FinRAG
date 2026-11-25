@@ -1,6 +1,6 @@
 """Provider abstraction.
 
-All LLM providers in Ledgermind speak the same `LLMProvider` Protocol. Each
+All LLM providers in FinRAG speak the same `LLMProvider` Protocol. Each
 implementation translates its vendor's streaming response and tool-call format
 into a unified `StreamEvent` taxonomy. Providers are constructed per-request
 with the user's BYO key — they are NOT singletons.
