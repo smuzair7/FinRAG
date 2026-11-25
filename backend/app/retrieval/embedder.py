@@ -5,7 +5,10 @@ from __future__ import annotations
 import logging
 import sqlite3
 import threading
+from functools import lru_cache
 from pathlib import Path
+
+from tokenizers import Tokenizer
 
 from app.settings import get_infra, get_settings
 
@@ -40,6 +43,15 @@ def _get_sparse():  # type: ignore[no-untyped-def]
                 log.info("loading sparse embedder %s", model_name)
                 _sparse_model = SparseTextEmbedding(model_name=model_name)
     return _sparse_model
+
+
+@lru_cache(maxsize=1)
+def embedding_tokenizer() -> Tokenizer:
+    """Tokenizer of the configured dense model, used to size chunks in model tokens."""
+    tokenizer = Tokenizer.from_pretrained(get_infra().embedding_model)
+    tokenizer.no_truncation()
+    tokenizer.no_padding()
+    return tokenizer
 
 
 def dense_dim() -> int:

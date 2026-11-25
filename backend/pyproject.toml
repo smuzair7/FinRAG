@@ -30,6 +30,7 @@ dependencies = [
   "rapidocr-onnxruntime>=1.4.0",
   "pypdf>=5.1.0",
   "semantic-text-splitter>=0.18.0",
+  "tokenizers>=0.20.0",
 
   # Job queue + object storage
   "arq>=0.26.3",

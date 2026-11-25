@@ -3,9 +3,9 @@
 Strategy:
   1. Walk the parsed document by section headings. Each section becomes one or
      more chunks.
-  2. If a section exceeds a hard token budget, split with a sentence-aware
-     splitter (`semantic_text_splitter.TextSplitter`, Rust-binding, no model
-     load required for plain character/token-count splitting).
+  2. If a section exceeds the token budget, split it at sentence boundaries with
+     `semantic_text_splitter`, counting tokens with the embedding model's own
+     tokenizer (no model weights are loaded).
   3. Tables are NEVER merged with surrounding prose; each table is its own
      chunk type with the markdown body and a JSON preview retained in payload.
 
@@ -21,10 +21,13 @@ from typing import Literal
 
 from semantic_text_splitter import TextSplitter
 
+from app.retrieval.embedder import embedding_tokenizer
+
 ChunkKind = Literal["text", "table"]
 
-DEFAULT_MAX_CHARS = 6000  # approximate cap; tuned for ~1.5K-token bge-m3 budget
-DEFAULT_OVERLAP = 600
+# Leaves room for the context header within a 512-token encoder window.
+DEFAULT_MAX_TOKENS = 448
+DEFAULT_OVERLAP_TOKENS = 48
 
 
 @dataclass(slots=True)
@@ -39,9 +42,10 @@ class Chunk:
 
 
 @lru_cache(maxsize=8)
-def _get_splitter(max_chars: int = DEFAULT_MAX_CHARS, overlap: int = DEFAULT_OVERLAP) -> TextSplitter:
-    """One cached splitter per configuration — purely deterministic, no model load."""
-    return TextSplitter(max_chars, overlap=overlap)
+def _get_splitter(max_tokens: int, overlap: int) -> TextSplitter:
+    return TextSplitter.from_huggingface_tokenizer(
+        embedding_tokenizer(), max_tokens, overlap=overlap
+    )
 
 
 def chunk_text(
@@ -49,13 +53,13 @@ def chunk_text(
     *,
     page: int,
     section_path: tuple[str, ...] = (),
-    max_chars: int = DEFAULT_MAX_CHARS,
-    overlap: int = DEFAULT_OVERLAP,
+    max_tokens: int = DEFAULT_MAX_TOKENS,
+    overlap: int = DEFAULT_OVERLAP_TOKENS,
 ) -> list[Chunk]:
-    """Split prose by sentence boundaries while staying under `max_chars`."""
+    """Split prose at sentence boundaries into chunks of at most `max_tokens` model tokens."""
     if not text.strip():
         return []
-    splitter = _get_splitter(max_chars=max_chars, overlap=overlap)
+    splitter = _get_splitter(max_tokens, overlap)
     pieces = splitter.chunks(text)
     return [
         Chunk(
