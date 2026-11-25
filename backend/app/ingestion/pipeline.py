@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from app.calculations.facts_store import FactsStore, store_path
-from app.ingestion.chunking import Chunk, chunk_text, make_table_chunk
+from app.ingestion.chunking import Chunk, chunk_text, contextualize, make_table_chunk
 from app.ingestion.hashing import chunk_hash, sha256_file
 from app.ingestion.parser_docling import ParsedDocument, parse_pdf
 from app.ingestion.tables import extract_facts
@@ -138,7 +138,7 @@ async def _embed_and_upsert(
 ) -> int:
     if not chunks:
         return 0
-    texts = [c.text for c in chunks]
+    texts = [contextualize(c.text, doc_name=doc_name, section_path=c.section_path) for c in chunks]
     dense = embed_dense(texts)
     _step(progress_cb, 80, "sparse encoding")
     sparse = embed_sparse(texts)

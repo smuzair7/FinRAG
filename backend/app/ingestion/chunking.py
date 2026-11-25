@@ -68,6 +68,16 @@ def chunk_text(
     ]
 
 
+def contextualize(
+    text: str, *, doc_name: str, section_path: tuple[str, ...] | list[str] = ()
+) -> str:
+    """Prefix a chunk with its document and section so it embeds with its context."""
+    header = [f"Document: {doc_name}"] if doc_name else []
+    if section_path:
+        header.append("Section: " + " > ".join(section_path))
+    return "\n".join([*header, "", text]) if header else text
+
+
 def make_table_chunk(
     *,
     markdown: str,
