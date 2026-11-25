@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 
 DENSE_NAME = "dense"
 SPARSE_NAME = "sparse"
-DENSE_DIM = 1024  # bge-m3
+DENSE_DIM = 1024  # bge-large-en-v1.5
 
 _client: AsyncQdrantClient | None = None
 

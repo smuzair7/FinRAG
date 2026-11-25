@@ -48,7 +48,7 @@ class InfraSettings(BaseSettings):
     s3_region: str = "us-east-1"
     s3_use_ssl: bool = False
 
-    embedding_model: str = Field(default="BAAI/bge-m3")
+    embedding_model: str = Field(default="BAAI/bge-large-en-v1.5")
     reranker_model: str = Field(default="BAAI/bge-reranker-v2-m3")
 
 

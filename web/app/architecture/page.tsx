@@ -40,7 +40,7 @@ export default function ArchitecturePage() {
 │        │                              │  Docling parse        │
 │        │                              │  table extraction     │
 │        │                              │  section chunking     │
-│        │                              │  bge-m3 embeddings    │
+│        │                              │  dense + SPLADE embed │
 │        │                              │  Qdrant + DuckDB      │
 │        │                              └───────────────────────┘
 │        │
