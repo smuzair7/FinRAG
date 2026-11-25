@@ -75,3 +75,19 @@ async def test_retrieve_respects_doc_filter(memory_index) -> None:
     only_b = await orchestrator.retrieve(session_id="s1", query="revenue", doc_ids=["b"])
     assert {c.doc_id for c in everything.citations} == {"a", "b"}
     assert {c.doc_id for c in only_b.citations} == {"b"}
+
+
+async def test_retrieve_skips_near_duplicate_passages(memory_index) -> None:
+    repeated = "Net revenue increased 12 percent to 1.2 billion driven by subscription growth."
+    await memory_index(
+        "s2",
+        [
+            {"doc_id": "10k", "doc_name": "10k.pdf", "page": 3, "text": repeated},
+            {"doc_id": "ar", "doc_name": "ar.pdf", "page": 7, "text": repeated + " See note 4."},
+            {"doc_id": "10k", "doc_name": "10k.pdf", "page": 9, "text": "Revenue by segment."},
+        ],
+    )
+    result = await orchestrator.retrieve(session_id="s2", query="net revenue increased", top_k=2)
+    texts = [c.snippet for c in result.citations]
+    assert len(texts) == 2
+    assert sum("increased 12 percent" in t for t in texts) == 1
