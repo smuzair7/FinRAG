@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
 export const metadata = {
-  title: "Ledgermind — Architecture",
+  title: "FinRAG — Architecture",
 };
 
 export default function ArchitecturePage() {

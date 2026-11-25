@@ -12,7 +12,7 @@ export function SiteHeader() {
       <div className="container-wide flex h-14 items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
           <span className="inline-block h-2.5 w-2.5 rounded-sm bg-accent" />
-          Ledgermind
+          FinRAG
         </Link>
         <nav className="flex items-center gap-1 text-sm">
           <Link
@@ -22,7 +22,7 @@ export function SiteHeader() {
             Architecture
           </Link>
           <a
-            href="https://github.com/smuzair7/LedgerMind"
+            href="https://github.com/smuzair7/FinRAG"
             target="_blank"
             rel="noreferrer"
             className="rounded-md px-3 py-1.5 text-muted hover:bg-surface2 hover:text-ink"

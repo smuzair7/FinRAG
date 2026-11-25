@@ -16,10 +16,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ledgermind — Read financial statements with a model that shows its work",
+  title: "FinRAG — Read financial statements with a model that shows its work",
   description:
     "RAG for financial documents. Cited every claim. Computed, not guessed. Streamed. Multi-provider, BYO-key.",
-  metadataBase: new URL("https://github.com/smuzair7/LedgerMind"),
+  metadataBase: new URL("https://github.com/smuzair7/FinRAG"),
 };
 
 export default function RootLayout({

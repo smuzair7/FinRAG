@@ -1,6 +1,6 @@
 # Web
 
-Next.js 15 (App Router) frontend for Ledgermind.
+Next.js 15 (App Router) frontend for FinRAG.
 
 ```bash
 pnpm install

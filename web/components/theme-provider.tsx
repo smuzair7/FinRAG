@@ -4,7 +4,7 @@ import * as React from "react";
 
 type Theme = "dark" | "light";
 
-const STORAGE_KEY = "ledgermind:theme";
+const STORAGE_KEY = "finrag:theme";
 
 function getInitial(): Theme {
   if (typeof window === "undefined") return "dark";

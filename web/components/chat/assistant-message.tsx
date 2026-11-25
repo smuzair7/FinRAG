@@ -22,7 +22,7 @@ export function AssistantMessage({ message, streaming }: Props) {
 
   return (
     <article className="animate-fade-in space-y-3">
-      <div className="text-xs uppercase tracking-wider text-muted">Ledgermind</div>
+      <div className="text-xs uppercase tracking-wider text-muted">FinRAG</div>
 
       {message.citations && message.citations.length > 0 && (
         <div className="flex flex-wrap gap-1.5">

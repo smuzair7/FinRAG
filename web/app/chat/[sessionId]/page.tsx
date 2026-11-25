@@ -74,7 +74,7 @@ export default function ChatSessionPage() {
           </Button>
           <Link href="/" className="font-semibold tracking-tight">
             <span className="inline-block h-2.5 w-2.5 -translate-y-0.5 rounded-sm bg-accent align-middle" />{" "}
-            Ledgermind
+            FinRAG
           </Link>
           <Badge variant="muted" className="ml-2">
             session · {sessionId.slice(0, 8)}

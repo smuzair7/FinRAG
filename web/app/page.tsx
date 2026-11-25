@@ -108,7 +108,7 @@ export default function HomePage() {
               <span className="h-2.5 w-2.5 rounded-full bg-negative/70" />
               <span className="h-2.5 w-2.5 rounded-full bg-accent/70" />
               <span className="h-2.5 w-2.5 rounded-full bg-positive/70" />
-              <span className="ml-2 text-xs text-muted">ledgermind · chat</span>
+              <span className="ml-2 text-xs text-muted">finrag · chat</span>
             </div>
             <div className="space-y-3 text-sm">
               <div className="flex gap-2">
@@ -153,7 +153,7 @@ export default function HomePage() {
             </h2>
             <p className="mt-3 text-muted">
               Most chat-with-PDF demos stop at <code>PyPDF2.extract_text</code> + top-K
-              cosine. Ledgermind treats the boring parts — parsing, retrieval, math,
+              cosine. FinRAG treats the boring parts — parsing, retrieval, math,
               streaming — as the actual product.
             </p>
           </div>
