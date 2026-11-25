@@ -1,0 +1,24 @@
+{"query": "What were Northwind Traders' revenues for the year and how did they change?", "relevant": ["nw-rev"]}
+{"query": "What were Contoso Pharma's revenues for the year and how did they change?", "relevant": ["cp-rev"]}
+{"query": "What were Fabrikam Energy's revenues for the year and how did they change?", "relevant": ["fe-rev"]}
+{"query": "How did Northwind Traders' gross margin move?", "relevant": ["nw-gm"]}
+{"query": "How did Contoso Pharma's gross margin move?", "relevant": ["cp-gm"]}
+{"query": "How did Fabrikam Energy's gross margin move?", "relevant": ["fe-gm"]}
+{"query": "Why did Northwind Traders' operating expenses increase?", "relevant": ["nw-opex"]}
+{"query": "Why did Contoso Pharma's operating expenses increase?", "relevant": ["cp-opex"]}
+{"query": "Why did Fabrikam Energy's operating expenses increase?", "relevant": ["fe-opex"]}
+{"query": "How much cash did Northwind Traders hold at year end?", "relevant": ["nw-cash"]}
+{"query": "How much cash did Contoso Pharma hold at year end?", "relevant": ["cp-cash"]}
+{"query": "How much cash did Fabrikam Energy hold at year end?", "relevant": ["fe-cash"]}
+{"query": "What is Northwind Traders' total borrowing?", "relevant": ["nw-debt"]}
+{"query": "What is Contoso Pharma's total borrowing?", "relevant": ["cp-debt"]}
+{"query": "What is Fabrikam Energy's total borrowing?", "relevant": ["fe-debt"]}
+{"query": "What did Northwind Traders do with its dividend?", "relevant": ["nw-div"]}
+{"query": "What did Contoso Pharma do with its dividend?", "relevant": ["cp-div"]}
+{"query": "What did Fabrikam Energy do with its dividend?", "relevant": ["fe-div"]}
+{"query": "What concentration risk does Northwind Traders disclose?", "relevant": ["nw-risk"]}
+{"query": "What concentration risk does Contoso Pharma disclose?", "relevant": ["cp-risk"]}
+{"query": "What concentration risk does Fabrikam Energy disclose?", "relevant": ["fe-risk"]}
+{"query": "What guidance did Northwind Traders give for next year?", "relevant": ["nw-outlook"]}
+{"query": "What guidance did Contoso Pharma give for next year?", "relevant": ["cp-outlook"]}
+{"query": "What guidance did Fabrikam Energy give for next year?", "relevant": ["fe-outlook"]}

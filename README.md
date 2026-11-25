@@ -124,6 +124,26 @@ pytest -q
 
 Tests cover chunking, hybrid retrieval against an in-memory Qdrant, table extraction, content hashing, the per-session facts store, the AST-whitelisted Python sandbox, and a few smoke endpoints.
 
+### Retrieval evaluation
+
+`backend/eval/` holds a small synthetic benchmark: three companies' filings covering the same eight topics in parallel wording (24 passages), and one question per company and topic. It measures whether retrieval finds the right company's passage when several filings in a session say nearly the same thing.
+
+```bash
+cd backend
+python -m eval.run_retrieval_eval                # full pipeline
+python -m eval.run_retrieval_eval --no-context   # without contextual chunk headers
+python -m eval.run_retrieval_eval --no-rerank    # without the cross-encoder
+```
+
+| Configuration | Recall@1 | Recall@5 | MRR@10 |
+|---|---|---|---|
+| Full pipeline | 1.00 | 1.00 | 1.00 |
+| No context headers | 0.50 | 0.88 | 0.65 |
+| No reranker | 1.00 | 1.00 | 1.00 |
+| Neither | 0.33 | 0.88 | 0.55 |
+
+Context headers do the disambiguation; the reranker only helps here when they are missing. The set is small and saturates with the full pipeline, so treat it as a regression check rather than a general benchmark.
+
 ### Frontend
 
 ```bash
