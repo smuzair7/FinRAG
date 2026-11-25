@@ -39,7 +39,7 @@ export default function ArchitecturePage() {
 │        │                              │  arq worker (Redis)   │
 │        │                              │  Docling parse        │
 │        │                              │  table extraction     │
-│        │                              │  bilingual chunking   │
+│        │                              │  section chunking     │
 │        │                              │  bge-m3 embeddings    │
 │        │                              │  Qdrant + DuckDB      │
 │        │                              └───────────────────────┘

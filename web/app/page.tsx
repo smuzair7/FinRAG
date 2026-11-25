@@ -3,7 +3,7 @@ import {
   ArrowRight,
   Quote,
   Calculator,
-  Languages,
+  Layers,
   ShieldCheck,
   Zap,
   GitBranch,
@@ -26,9 +26,9 @@ const features = [
     body: "Numbers are produced by deterministic tool calls (compute_ratio, compute_yoy, …) over a structured fact store — then audited inline.",
   },
   {
-    icon: Languages,
-    title: "Bilingual by design",
-    body: "Arabic and English are indexed natively via bge-m3 — no translation hop. RTL UI flips on language switch.",
+    icon: Layers,
+    title: "Hybrid retrieval",
+    body: "Dense and sparse vectors per chunk, fused with reciprocal-rank fusion in Qdrant, then reranked by a cross-encoder.",
   },
   {
     icon: ShieldCheck,
@@ -78,7 +78,7 @@ export default function HomePage() {
               <span className="text-accent">shows its work</span>.
             </h1>
             <p className="max-w-xl text-pretty text-lg text-muted">
-              Upload any annual report — in English or Arabic. Ask anything. Get an
+              Upload any annual report. Ask anything. Get an
               answer where every claim is cited to a page and every number is{" "}
               <em>computed</em> by a sandboxed tool call, not hallucinated by the
               model.
@@ -182,8 +182,8 @@ export default function HomePage() {
               Hybrid retrieval. Sandboxed math.
             </h2>
             <p className="mt-4 text-muted">
-              Docling parses tables with cell grids and bboxes. <code>bge-m3</code>{" "}
-              indexes Arabic and English in one model. Qdrant runs hybrid dense +
+              Docling parses tables with cell grids and bboxes. A dense embedder and a
+              SPLADE sparse encoder index every chunk. Qdrant runs hybrid dense +
               sparse with RRF fusion. A reranker then trims to 6. Calculations are
               named tool calls executed in an AST-whitelisted sandbox — every number
               cites its source and its formula.
