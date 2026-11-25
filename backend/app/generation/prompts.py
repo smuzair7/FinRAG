@@ -1,8 +1,4 @@
-"""System prompts for the chat orchestrator.
-
-Kept terse and English-only. Bilingual output is driven by the user message and
-by the `language` field on the chat request, not by switching system prompts.
-"""
+"""System prompts for the chat orchestrator."""
 
 from __future__ import annotations
 
@@ -18,16 +14,4 @@ Rules:
   clearer.
 - If the documents do not contain the answer, say so explicitly rather than
   guessing.
-
-You may be asked questions in English or Arabic. Answer in whichever language the
-user wrote, unless they explicitly asked for the other one. If the user picked
-'both', answer in English first, then Arabic, with a blank line between them.
 """
-
-
-def language_hint(language: str) -> str:
-    if language == "ar":
-        return "Respond in Arabic."
-    if language == "both":
-        return "Respond in English first, then in Arabic, separated by a blank line."
-    return "Respond in English."
