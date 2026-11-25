@@ -54,7 +54,7 @@ def rerank(
         return []
     try:
         model = _get_reranker()
-        texts = [c.payload.get("text") or c.payload.get("raw_text") or "" for c in candidates]
+        texts = [c.payload.get("text") or "" for c in candidates]
         scores = list(model.rerank(query, texts))
         out = [
             RerankResult(payload=c.payload, score_before=c.score_before, score=float(s))

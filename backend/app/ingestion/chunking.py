@@ -29,14 +29,12 @@ DEFAULT_OVERLAP = 600
 
 @dataclass(slots=True)
 class Chunk:
-    text: str                    # normalized, indexable
-    raw_text: str                # original for display
+    text: str
     kind: ChunkKind
     page: int
     section_path: tuple[str, ...] = ()
     table_id: str | None = None
     bbox: tuple[float, float, float, float] | None = None
-    language: str | None = None
     payload: dict[str, object] = field(default_factory=dict)
 
 
@@ -51,8 +49,6 @@ def chunk_text(
     *,
     page: int,
     section_path: tuple[str, ...] = (),
-    raw_text: str | None = None,
-    language: str | None = None,
     max_chars: int = DEFAULT_MAX_CHARS,
     overlap: int = DEFAULT_OVERLAP,
 ) -> list[Chunk]:
@@ -64,11 +60,9 @@ def chunk_text(
     return [
         Chunk(
             text=piece,
-            raw_text=piece if raw_text is None else raw_text,
             kind="text",
             page=page,
             section_path=section_path,
-            language=language,
         )
         for piece in pieces
     ]
@@ -77,22 +71,18 @@ def chunk_text(
 def make_table_chunk(
     *,
     markdown: str,
-    raw_text: str,
     page: int,
     table_id: str,
     section_path: tuple[str, ...] = (),
     bbox: tuple[float, float, float, float] | None = None,
-    language: str | None = None,
     json_preview: list[dict[str, object]] | None = None,
 ) -> Chunk:
     return Chunk(
         text=markdown,
-        raw_text=raw_text,
         kind="table",
         page=page,
         section_path=section_path,
         table_id=table_id,
         bbox=bbox,
-        language=language,
         payload={"table_preview": json_preview or []},
     )

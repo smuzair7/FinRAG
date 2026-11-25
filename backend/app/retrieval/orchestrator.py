@@ -89,7 +89,7 @@ async def retrieve(
 
     for i, r in enumerate(reranked, start=1):
         payload = r.payload
-        text = payload.get("raw_text") or payload.get("text") or ""
+        text = payload.get("text") or ""
         page = int(payload.get("page") or 0) or 1
         doc_id = str(payload.get("doc_id") or "")
         doc_name = str(payload.get("doc_name") or "")

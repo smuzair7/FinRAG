@@ -10,3 +10,8 @@ def test_chunk_text_honours_max_chars_per_call() -> None:
     small = chunk_text(SECTION, page=1, max_chars=500, overlap=50)
     assert len(small) > 1
     assert max(len(c.text) for c in small) <= 500
+
+
+def test_each_chunk_carries_only_its_own_text() -> None:
+    chunks = chunk_text(SECTION, page=1, max_chars=500, overlap=0)
+    assert "".join(c.text for c in chunks).replace(" ", "") == SECTION.replace(" ", "")

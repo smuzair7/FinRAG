@@ -63,7 +63,7 @@ async def ensure_collection(session_id: str) -> None:
         sparse_vectors_config={SPARSE_NAME: SparseVectorParams(index=SparseIndexParams(on_disk=False))},
     )
     # Useful payload indexes for filtering.
-    for field in ("doc_id", "language", "chunk_type"):
+    for field in ("doc_id", "chunk_type"):
         try:
             await client.create_payload_index(
                 collection_name=name,
