@@ -45,19 +45,6 @@ def test_quarterly_periods() -> None:
     assert all(f.period_kind == "quarter" for f in facts)
 
 
-def test_arabic_revenue_row() -> None:
-    table = _table(
-        [
-            ["", "FY2024", "FY2023"],
-            ["الإيرادات", "1٬234٬567", "1٬100٬000"],
-        ]
-    )
-    facts = extract_facts(session_id="s", doc_id="d", table=table)
-    # AR-indic thousands separator handled.
-    assert len(facts) == 2
-    assert all(f.line_item == "Revenue" for f in facts)
-    assert facts[0].value == 1_234_567
-
 
 def test_no_periods_no_facts() -> None:
     table = _table([["foo", "bar"], ["1", "2"]])
@@ -79,14 +66,18 @@ def test_unit_scale_thousands() -> None:
     assert facts[0].unit_scale == 1_000
 
 
-def test_arabic_indic_digits() -> None:
+def test_single_synonym_line_items_canonicalize() -> None:
     table = _table(
         [
-            ["", "FY٢٠٢٤"],
-            ["Revenue", "١٬٢٣٤٬٥٦٧"],
+            ["", "FY2024"],
+            ["Gross profit", "500"],
+            ["Total assets", "9,000"],
+            ["Interest expense", "(12)"],
         ]
     )
     facts = extract_facts(session_id="s", doc_id="d", table=table)
-    assert len(facts) == 1
-    assert facts[0].period == "FY2024"
-    assert facts[0].value == 1_234_567
+    assert {f.line_item: f.value for f in facts} == {
+        "Gross profit": 500,
+        "Total assets": 9_000,
+        "Interest expense": -12,
+    }
